@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Klappuhr</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@500;600&display=swap">
+<style>
+/* Ein Bildschirm, mittig: vier Klappkarten, Doppelpunkt, Datumszeile. Bewusst nur dunkel – eine Nachttisch-Uhr. */
+:root {
+  color-scheme: dark;
+  --raum: #0a0908;
+  --raum-glanz: #2a2622;
+  --karte-oben: #3a3633;
+  --karte-oben-tief: #2b2826;
+  --karte-unten: #242120;
+  --karte-unten-tief: #1b1918;
+  --spalt: #050404;
+  --ziffer: #f3e9d8;
+  --ziffer-unten: #e6dac6;
+  --bernstein: #e8a84a;
+  --datum: #a79c8c;
+  --font-ziffer: "Barlow Condensed", "Roboto Condensed", "Arial Narrow", sans-serif;
+  --font-text: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --u: min(1vw, 1.75vh);
+}
+html, body { height: 100%; }
+body {
+  background: radial-gradient(ellipse at 50% 42%, var(--raum-glanz) 0%, #121010 58%, var(--raum) 100%);
+  background-color: var(--raum);
+  color: var(--ziffer);
+  font-family: var(--font-text);
+  overflow: hidden;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+  cursor: default;
+}
+.buehne {
+  height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: calc(5 * var(--u));
+}
+.uhr { display: flex; align-items: center; gap: calc(1.4 * var(--u)); }
+
+.karte {
+  position: relative;
+  width: calc(19 * var(--u)); height: calc(32 * var(--u));
+  perspective: calc(120 * var(--u));
+  border-radius: calc(1.6 * var(--u));
+  box-shadow: 0 calc(1.8 * var(--u)) calc(3.5 * var(--u)) rgba(0,0,0,.7);
+  font-family: var(--font-ziffer); font-weight: 700;
+  font-size: calc(30 * var(--u));
+  font-variant-numeric: tabular-nums;
+}
+.haelfte {
+  position: absolute; left: 0; right: 0; height: 50%;
+  overflow: hidden;
+  backface-visibility: hidden;
+}
+.haelfte span {
+  position: absolute; left: 0; right: 0; height: 200%;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+.oben { top: 0; border-radius: calc(1.6 * var(--u)) calc(1.6 * var(--u)) 0 0;
+  background: linear-gradient(var(--karte-oben), var(--karte-oben-tief)); transform-origin: 50% 100%; }
+.oben span { top: 0; color: var(--ziffer); }
+.unten { bottom: 0; border-radius: 0 0 calc(1.6 * var(--u)) calc(1.6 * var(--u));
+  background: linear-gradient(var(--karte-unten), var(--karte-unten-tief)); transform-origin: 50% 0%; }
+.unten span { bottom: 0; color: var(--ziffer-unten); }
+
+.klappe-oben { z-index: 2; }
+.klappe-unten { z-index: 2; transform: rotateX(90deg); }
+.karte.klappt .klappe-oben { animation: runter .28s ease-in forwards; }
+.karte.klappt .klappe-unten { animation: auf .32s .28s ease-out forwards; }
+@keyframes runter { from { transform: rotateX(0); } to { transform: rotateX(-90deg); } }
+@keyframes auf { from { transform: rotateX(90deg); } to { transform: rotateX(0); } }
+
+.spalt { position: absolute; left: 0; right: 0; top: calc(50% - .25 * var(--u)); height: calc(.5 * var(--u)); background: var(--spalt); z-index: 3; }
+.stift { position: absolute; top: calc(50% - 1.4 * var(--u)); width: calc(1 * var(--u)); height: calc(2.8 * var(--u));
+  border-radius: calc(.3 * var(--u)); background: linear-gradient(#5a5550, #2a2724); z-index: 4; }
+.stift.l { left: calc(-.5 * var(--u)); }
+.stift.r { right: calc(-.5 * var(--u)); }
+
+.punkte { display: flex; flex-direction: column; gap: calc(6 * var(--u)); padding: 0 calc(1.6 * var(--u)); }
+.punkte i { width: calc(2.3 * var(--u)); height: calc(2.3 * var(--u)); border-radius: 50%;
+  background: var(--bernstein); box-shadow: 0 0 calc(1.6 * var(--u)) rgba(232,168,74,.6); }
+
+.datum { font-size: calc(3.6 * var(--u)); letter-spacing: .12em; text-transform: uppercase; color: var(--datum); font-weight: 500; text-align: center; }
+.datum b { color: var(--bernstein); font-weight: 600; }
+
+.leiste {
+  position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  display: flex; gap: 8px; opacity: 0; transition: opacity .4s;
+}
+body.aktiv .leiste { opacity: 1; }
+.leiste button {
+  font: 600 20px var(--font-text); color: var(--datum); background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12); border-radius: 999px; padding: 14px 24px; cursor: pointer;
+}
+.leiste button:hover { color: var(--ziffer); }
+.leiste button:focus-visible { outline: 2px solid var(--bernstein); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .karte.klappt .klappe-oben, .karte.klappt .klappe-unten { animation: none; }
+}
+body { margin: 0; }
+</style>
+</head>
+<body>
+
+<main class="buehne">
+  <div class="uhr" role="timer" aria-live="off" id="uhr">
+    <div class="karte" id="h1"></div>
+    <div class="karte" id="h2"></div>
+    <div class="punkte" aria-hidden="true"><i></i><i></i></div>
+    <div class="karte" id="m1"></div>
+    <div class="karte" id="m2"></div>
+  </div>
+  <p class="datum" id="datum"></p>
+</main>
+
+<div class="leiste">
+  <button id="vollbild" type="button">Vollbild</button>
+</div>
+
+<script>
+const TAGE = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+const MONATE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+
+function baueKarte(el, z) {
+  el.innerHTML =
+    `<div class="haelfte oben ziel"><span>${z}</span></div>` +
+    `<div class="haelfte unten alt"><span>${z}</span></div>` +
+    `<div class="haelfte oben klappe-oben"><span>${z}</span></div>` +
+    `<div class="haelfte unten klappe-unten"><span>${z}</span></div>` +
+    `<div class="spalt"></div><div class="stift l"></div><div class="stift r"></div>`;
+  el.dataset.z = z;
+}
+
+function setze(el, z) {
+  if (el.dataset.z === z) return;
+  const alt = el.dataset.z;
+  const q = s => el.querySelector(s + ' span');
+  q('.ziel').textContent = z;          // neue obere Hälfte liegt hinten
+  q('.alt').textContent = alt;         // alte untere Hälfte bleibt bis zum Ende sichtbar
+  q('.klappe-oben').textContent = alt; // alte obere Hälfte klappt nach unten weg
+  q('.klappe-unten').textContent = z;  // neue untere Hälfte klappt herunter
+  el.classList.remove('klappt'); void el.offsetWidth; el.classList.add('klappt');
+  el.dataset.z = z;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { q('.alt').textContent = z; el.classList.remove('klappt'); q('.klappe-oben').textContent = z; }, 650);
+}
+
+const ids = ['h1','h2','m1','m2'].map(id => document.getElementById(id));
+function jetzt() {
+  const d = new Date();
+  const s = String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0');
+  return { d, s };
+}
+const start = jetzt();
+ids.forEach((el, i) => baueKarte(el, start.s[i]));
+
+function tick() {
+  const { d, s } = jetzt();
+  ids.forEach((el, i) => setze(el, s[i]));
+  document.getElementById('datum').innerHTML =
+    `<b>${TAGE[d.getDay()]}</b> · ${d.getDate()}. ${MONATE[d.getMonth()]} ${d.getFullYear()}`;
+  document.getElementById('uhr').setAttribute('aria-label', `${s.slice(0,2)}:${s.slice(2)} Uhr`);
+}
+tick();
+setInterval(tick, 1000);
+
+// Bildschirm wach halten, solange die Seite sichtbar ist
+let sperre = null;
+async function wachHalten() {
+  try { if ('wakeLock' in navigator && document.visibilityState === 'visible') sperre = await navigator.wakeLock.request('screen'); } catch (e) {}
+}
+wachHalten();
+document.addEventListener('visibilitychange', wachHalten);
+
+// Knopf nur kurz nach Berührung zeigen
+let ruhe;
+function zeigeLeiste() {
+  document.body.classList.add('aktiv');
+  clearTimeout(ruhe);
+  ruhe = setTimeout(() => document.body.classList.remove('aktiv'), 3000);
+}
+['pointerdown','pointermove','keydown'].forEach(e => document.addEventListener(e, zeigeLeiste));
+zeigeLeiste(); clearTimeout(ruhe); ruhe = setTimeout(() => document.body.classList.remove('aktiv'), 10000);
+
+// Erstes Tippen irgendwo startet Vollbild
+document.querySelector('.buehne').addEventListener('click', () => { if (!document.fullscreenElement) document.getElementById('vollbild').click(); });
+// Doppeltippen schaltet Vollbild um
+document.querySelector('.buehne').addEventListener('dblclick', () => document.getElementById('vollbild').click());
+
+document.getElementById('vollbild').addEventListener('click', async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch (e) {}
+  wachHalten();
+});
+</script>
+
+</body>
+</html>
