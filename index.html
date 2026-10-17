@@ -195,8 +195,6 @@ zeigeLeiste(); clearTimeout(ruhe); ruhe = setTimeout(() => document.body.classLi
 
 // Erstes Tippen irgendwo startet Vollbild
 document.querySelector('.buehne').addEventListener('click', () => { if (!document.fullscreenElement) document.getElementById('vollbild').click(); });
-// Doppeltippen schaltet Vollbild um
-document.querySelector('.buehne').addEventListener('dblclick', () => document.getElementById('vollbild').click());
 
 document.getElementById('vollbild').addEventListener('click', async () => {
   try {
