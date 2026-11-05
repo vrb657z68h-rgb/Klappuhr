@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Rheinblick</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#0d2433">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rheinblick">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: App in einer Spalte (max. 480px), Inhalt scrollt, Tab-Leiste unten fest. Bewusst ein dunkler Abend-Look. */
+:root{
+  --night:#0d2433; --deep:#0a1c28; --river:#174a63; --card:#12324a; --line:#1f4256;
+  --glow:#f2a65a; --mist:#cfe0e6; --white:#ffffff; --ok:#7ed49a; --warn:#f2c46a; --off:#e08a7a;
+  --f-display:"Instrument Serif",Georgia,serif; --f-ui:"DM Sans",system-ui,-apple-system,sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--deep);color:var(--mist);font-family:var(--f-ui);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--deep)}
+.app{max-width:480px;margin:0 auto;min-height:100%;background:var(--night);display:flex;flex-direction:column;position:relative}
+main{flex:1;padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+.view[hidden]{display:none!important}
+.pad{padding-block:18px 6px;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+h2{font-family:var(--f-display);font-weight:400;font-size:26px;line-height:1.1;margin:0 0 10px;color:var(--white);text-wrap:balance}
+.ex{font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.6}
+a{color:inherit}
+a:focus-visible,button:focus-visible{outline:2px solid var(--white);outline-offset:2px}
+
+/* Himmel */
+.sky{position:relative;min-height:230px;background:linear-gradient(180deg,#2b4f6b 0%,#c9735a 70%,#f2a65a 100%);color:var(--white);overflow:hidden;
+  padding-block:30px 22px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.sky h1{font-family:var(--f-display);font-weight:400;font-size:44px;line-height:1;margin:0}
+.sky .place{font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.85;margin-top:4px}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.55);border-radius:999px;padding:5px 12px;font-size:13px;margin-top:14px;background:rgba(13,36,51,.25)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--ok);flex:none}
+.dot.warn{background:var(--warn)}.dot.off{background:var(--off)}
+.sunset{margin-top:16px;font-size:13px}
+.sunset strong{display:block;font-family:var(--f-display);font-weight:400;font-size:34px;line-height:1.1;font-variant-numeric:tabular-nums}
+.sun{position:absolute;left:50%;bottom:-30px;width:72px;height:72px;border-radius:50%;background:#ffd28a;transform:translateX(-50%);box-shadow:0 0 50px #ffcf7a}
+.water{height:24px;background:repeating-linear-gradient(90deg,var(--river) 0 18px,#1d5a77 18px 30px)}
+@media (prefers-reduced-motion:no-preference){.sun{animation:sink 7s ease-in-out infinite alternate}@keyframes sink{to{transform:translate(-50%,10px)}}
+  .water{animation:flow 8s linear infinite}@keyframes flow{to{background-position:60px 0}}}
+
+/* Zeilen und Knöpfe */
+.row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.row>span:first-child{min-width:0}
+.row>span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.row small{display:block;font-size:12px;opacity:.7}
+.btn{display:block;text-align:center;margin-top:10px;padding:12px;border-radius:14px;background:var(--glow);color:#1b1206;font-weight:700;font-size:14px;text-decoration:none;border:0;width:100%;cursor:pointer;font-family:inherit}
+.btn.ghost{background:transparent;color:var(--mist);border:1px solid #3d6a80}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.btns .btn{margin-top:0}
+.copy{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.copy button{background:none;border:1px solid #3d6a80;color:var(--mist);border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer;font-family:inherit}
+.copy b{font-weight:500;user-select:all;overflow-wrap:anywhere}
+
+/* Wetter-Auszug im Stil von „Wetter in Deutschland“ */
+.wid{border-radius:20px;background:linear-gradient(180deg,#111d38,#1d2c4a);border:1px solid #2a3a5c;padding:16px;color:var(--white)}
+.wid .brand{display:inline-block;background:#0a1226;border-radius:999px;padding:3px 10px;font-size:10px;font-weight:700;letter-spacing:.12em}
+.wid .now{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:10px}
+.wid .temp{font-size:62px;font-weight:300;line-height:.9;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.wid .cond{text-align:right;font-size:14px}
+.wid .cond small{display:block;opacity:.75;font-size:12px}
+.wid .hours{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;margin-top:14px;padding-top:12px;border-top:1px solid #2a3a5c;text-align:center;font-size:11px;font-variant-numeric:tabular-nums}
+.wid .hours svg{width:24px;height:24px;display:block;margin:4px auto 0}
+.wid .hours b{font-size:15px;font-weight:500}
+.wid .rain{color:#7cc4ff;font-weight:700;font-size:10px;display:block;height:13px}
+.wid .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.wid .tile{background:rgba(255,255,255,.06);border-radius:14px;padding:10px;font-size:12px;min-width:0}
+.wid .lbl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.7;font-weight:700}
+.wid .tile b{display:block;font-size:14px;margin-top:2px}
+.meter{height:6px;border-radius:6px;background:#26365a;margin-top:6px;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#3fd0d4,#7ed957,#f5c542,#f0644a);transition:width .6s}
+.wid a.open{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:11px 14px;border-radius:14px;background:#2c6df2;color:#fff;font-weight:700;font-size:13px;text-decoration:none}
+.wsrc{font-size:11px;opacity:.6;margin:8px 2px 0}
+
+/* Events */
+.month{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--glow);font-weight:700;margin:18px 0 8px}
+.ev{display:grid;grid-template-columns:50px 1fr;gap:12px;align-items:start;background:var(--card);border-radius:16px;padding:12px 14px;margin-bottom:8px}
+.ev.next{background:linear-gradient(135deg,#3a3a5a,#a35d4a)}
+.ev .dd{text-align:center;line-height:1;color:var(--white)}
+.ev .dd b{display:block;font-family:var(--f-display);font-weight:400;font-size:32px}
+.ev .dd small{font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.ev h3{margin:0;font-size:15px;color:var(--white)}
+.ev p{margin:2px 0 0;font-size:13px}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.tags span{font-size:11px;border:1px solid #3d6a80;border-radius:999px;padding:1px 8px}
+.tags .good{color:var(--ok);border-color:#3f7a59}.tags .bad{color:var(--off);border-color:#7a4a3f}
+.empty{background:var(--card);border-radius:16px;padding:16px;font-size:14px}
+
+/* Karte */
+.menu-cat{margin-bottom:8px}
+.price-note{font-size:12px;opacity:.75;margin:10px 0 0}
+
+/* Anfahrt */
+.map{height:170px;border-radius:16px;background:#12324a;position:relative;overflow:hidden}
+.map::before{content:"";position:absolute;left:60%;top:-10%;width:70px;height:130%;background:#1f5d7c;transform:rotate(12deg)}
+.map::after{content:"";position:absolute;left:22%;top:20%;width:90px;height:40px;border-radius:40px;background:#174a63;transform:rotate(-8deg)}
+.map i{position:absolute;left:46%;top:44%;width:16px;height:16px;border-radius:50% 50% 50% 0;background:var(--glow);transform:rotate(-45deg);z-index:1}
+.map span{position:absolute;font-size:10px;letter-spacing:.12em;z-index:1}
+
+/* Chat */
+.chat{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.msg{max-width:84%;background:var(--card);border-radius:16px 16px 16px 4px;padding:8px 12px;font-size:14px;align-self:flex-start;overflow-wrap:anywhere}
+.msg.me{align-self:flex-end;background:#1d5a77;border-radius:16px 16px 4px 16px}
+.msg.team{background:linear-gradient(135deg,#3a3a5a,#a35d4a)}
+.msg .who{display:flex;gap:6px;align-items:baseline;font-size:11px;opacity:.8;margin-bottom:2px}
+.msg .who b{font-weight:700;color:var(--white)}
+.msg .badge{font-size:9px;letter-spacing:.08em;text-transform:uppercase;background:var(--glow);color:#1b1206;border-radius:999px;padding:0 6px;font-weight:700}
+.msg .del{background:none;border:0;color:var(--mist);opacity:.6;font-size:11px;cursor:pointer;padding:0;margin-left:auto;font-family:inherit}
+.compose{position:sticky;bottom:calc(64px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;padding-block:10px;background:var(--night);margin-top:12px}
+.compose textarea{flex:1;min-width:0;resize:none;height:44px;border-radius:14px;border:1px solid #3d6a80;background:var(--card);color:var(--white);padding:11px 12px;font:inherit;font-size:14px}
+.compose textarea:focus-visible{outline:2px solid var(--glow)}
+.compose .btn{width:auto;margin:0;padding:0 18px}
+.compose .btn:disabled{opacity:.5;cursor:default}
+.chat-note{font-size:13px;opacity:.8;margin:6px 0 0}
+.day{align-self:center;font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.6;margin:8px 0 2px}
+
+/* Tab-Leiste */
+nav.tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:grid;grid-template-columns:repeat(5,1fr);background:var(--deep);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);z-index:5}
+nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px 12px;font-size:11px;text-decoration:none;color:var(--mist);opacity:.75}
+nav.tabs a svg{width:22px;height:22px}
+nav.tabs a[aria-current="page"]{color:var(--glow);opacity:1}
+.toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--white);color:var(--night);padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700;z-index:6}
+</style>
+</head>
+<body>
+
+<div class="app">
+<main>
+
+<!-- ===== Abend ===== -->
+<section class="view" id="v-abend">
+  <div class="sky">
+    <h1>Rheinblick</h1>
+    <div class="place">Kiosk am Rhein · Weisweil</div>
+    <span class="pill"><span class="dot" id="stDot"></span><span id="stText">…</span></span>
+    <div class="sunset">Sonnenuntergang heute<strong id="sunTime">--:--</strong></div>
+    <div class="sun"></div>
+  </div>
+  <div class="water"></div>
+
+  <div class="pad"><h2>Wetter am Kiosk</h2>
+    <div class="wid">
+      <span class="brand">WETTER IN DEUTSCHLAND</span>
+      <div class="now"><div class="temp" id="wTemp">--°</div><div class="cond">Weisweil<small id="wCond">wird geladen</small></div></div>
+      <div class="hours" id="wHours"></div>
+      <div class="tiles">
+        <div class="tile"><span class="lbl">Wetterfenster</span><b id="wfTitle">--</b><span id="wfText">Spaziergang am Rhein</span></div>
+        <div class="tile"><span class="lbl">Schnakenradar</span><b id="snTitle">--</b><div class="meter"><i id="snBar"></i></div></div>
+      </div>
+      <a class="open" href="https://schulze-andreas.de/wetter-deutschland" target="_blank" rel="noopener"><span>Ganze Vorhersage in der App</span><span aria-hidden="true">›</span></a>
+    </div>
+    <p class="wsrc" id="wSrc">Wetterdaten: Open-Meteo</p>
+  </div>
+
+  <div class="pad"><h2>Als Nächstes</h2><div id="nextEvents"></div>
+    <a class="btn ghost" href="#events">Alle Events</a></div>
+
+  <div class="pad" style="padding-bottom:22px"><h2>Ist offen?</h2>
+    <p style="margin:0;font-size:14px">Bei schönem Wetter ja. Ganz sicher bist du mit der Webcam: Weht in der Bildmitte die rote Beachflag, ist der Kiosk geöffnet.</p>
+    <a class="btn" href="https://www.kiosk-rheinblick-weisweil.de/" target="_blank" rel="noopener">Webcam ansehen</a></div>
+</section>
+
+<!-- ===== Events ===== -->
+<section class="view" id="v-events" hidden>
+  <div class="pad" style="padding-top:28px"><h2 style="font-size:34px">Events am Rhein</h2>
+    <p style="margin:0;font-size:14px">Live-Musik am Wochenende, wenn das Wetter passt. Eintritt frei, für die Musiker geht der Hut rum.</p>
+    <div id="eventList"></div>
+    <a class="btn" href="https://chat.whatsapp.com/BQC9I3U3IaoItZiH2Td2Ab" target="_blank" rel="noopener">Kurzfristige Infos in der WhatsApp-Gruppe</a>
+    <a class="btn ghost" href="https://www.kiosk-rheinblick-weisweil.de/veranstaltungskalender" target="_blank" rel="noopener" style="margin-bottom:18px">Kalender auf der Webseite</a>
+  </div>
+</section>
+
+<!-- ===== Karte ===== -->
+<section class="view" id="v-karte" hidden>
+  <div class="pad" style="padding-top:28px"><h2 style="font-size:34px">Karte</h2>
+    <p style="margin:0;font-size:14px">Kleine Vesperkarte, Getränke, Kaffee und Eis. Selbstbedienung an der Theke.</p>
+    <p class="ex" id="menuNote" style="margin:6px 0 0"></p>
+  </div>
+  <div id="menu"></div>
+  <div class="pad" style="padding-bottom:22px"><a class="btn ghost" href="https://www.kiosk-rheinblick-weisweil.de/biere" target="_blank" rel="noopener">Aktuelle Karte auf der Webseite</a></div>
+</section>
+
+<!-- ===== Anfahrt ===== -->
+<section class="view" id="v-anfahrt" hidden>
+  <div class="pad" style="padding-top:28px"><h2 style="font-size:34px">So findest du uns</h2>
+    <div class="map" aria-hidden="true"><span style="right:12px;top:12px">RHEIN</span><span style="left:12px;top:12px">YACHTHAFEN</span><span style="right:12px;bottom:12px">FRANKREICH ›</span><i></i></div>
+    <p style="font-size:14px">Rheinstr. 48, 79367 Weisweil. Direkt am Rheinhauptarm, mit Blick auf Yachthafen und Altrhein. Der Rhein ist hier 600 m breit, gegenüber liegt Frankreich.</p>
+    <a class="btn" href="https://www.google.com/maps/search/?api=1&query=Kiosk+Rheinblick,+Rheinstr.+48,+79367+Weisweil" target="_blank" rel="noopener">Route öffnen</a>
+  </div>
+  <div class="pad"><h2>Öffnungszeiten</h2>
+    <div class="row"><span>Saison</span><span>Mitte März bis Ende Oktober</span></div>
+    <div class="row" id="rowWeek"><span>Montag bis Samstag</span><span>ab 13:00</span></div>
+    <div class="row" id="rowSun"><span>Sonntag</span><span>ab 12:00</span></div>
+    <p style="font-size:13px;margin:8px 0 0">Nur bei schönem Wetter, bei Sturm und Regen bleibt der Kiosk zu.</p>
+  </div>
+  <div class="pad"><h2>Kontakt</h2>
+    <div class="copy"><span>Telefon<br><b>+49 176 48996266</b></span><button type="button" data-copy="+4917648996266">Kopieren</button></div>
+    <div class="copy"><span>E-Mail<br><b>kiosk.rheinblick@aol.com</b></span><button type="button" data-copy="kiosk.rheinblick@aol.com">Kopieren</button></div>
+    <div class="btns"><a class="btn ghost" href="https://www.instagram.com/rheinblick_weisweil" target="_blank" rel="noopener">Instagram</a><a class="btn ghost" href="https://www.facebook.com/Rheinblick.Weisweil" target="_blank" rel="noopener">Facebook</a></div>
+    <a class="btn ghost" href="https://chat.whatsapp.com/BQC9I3U3IaoItZiH2Td2Ab" target="_blank" rel="noopener">WhatsApp-Gruppe</a>
+    <p style="font-size:13px;margin:14px 0 22px;opacity:.8">Euer Kiosk-Team Jassmin und Toni</p>
+  </div>
+</section>
+
+<!-- ===== Chat ===== -->
+<section class="view" id="v-chat" hidden>
+  <div class="pad" style="padding-top:28px"><h2 style="font-size:34px">Chat am Rhein</h2>
+    <p style="margin:0;font-size:14px">Frag das Kiosk-Team, ob heute offen ist, oder verabrede dich zum Sonnenuntergang. Bitte freundlich bleiben.</p>
+    <p class="chat-note" id="chatState">Chat wird geladen …</p>
+    <div class="chat" id="chatList" aria-live="polite"></div>
+    <div id="nameRow" hidden style="margin-top:12px"><label for="chatName" style="font-size:12px;opacity:.8">Dein Name</label>
+      <input id="chatName" maxlength="30" placeholder="z. B. Anna" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;border-radius:12px;border:1px solid #3d6a80;background:var(--card);color:var(--white);padding:9px 12px;font:inherit;font-size:14px"></div>
+    <form class="compose" id="chatForm" hidden>
+      <label for="chatText" style="position:absolute;left:-9999px">Nachricht</label>
+      <textarea id="chatText" maxlength="500" placeholder="Nachricht schreiben"></textarea>
+      <button class="btn" type="submit" id="chatSend">Senden</button>
+    </form>
+    <div id="adminRow" hidden style="margin:4px 0 18px">
+      <button type="button" id="adminBtn" style="background:none;border:0;color:var(--mist);opacity:.7;font:inherit;font-size:12px;text-decoration:underline;cursor:pointer;padding:0">Kiosk-Team? Hier anmelden</button>
+      <form id="adminForm" hidden style="display:flex;gap:8px;margin-top:8px"><label for="adminKey" style="position:absolute;left:-9999px">Team-Schlüssel</label>
+        <input id="adminKey" type="password" placeholder="Team-Schlüssel" style="flex:1;min-width:0;border-radius:12px;border:1px solid #3d6a80;background:var(--card);color:var(--white);padding:9px 12px;font:inherit;font-size:14px">
+        <button class="btn" type="submit" style="width:auto;margin:0;padding:0 16px">OK</button></form>
+    </div>
+  </div>
+</section>
+</main>
+
+<nav class="tabs" aria-label="Bereiche">
+  <a href="#abend" data-v="abend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 18h18M6 18a6 6 0 0 1 12 0M12 6V4M5.6 9.6 4.2 8.2M18.4 9.6l1.4-1.4M3 21h18"/></svg>Abend</a>
+  <a href="#events" data-v="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 18V6l11-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>Events</a>
+  <a href="#karte" data-v="karte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/></svg>Karte</a>
+  <a href="#anfahrt" data-v="anfahrt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Anfahrt</a>
+  <a href="#chat" data-v="chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>Chat</a>
+</nav>
+<div class="toast" id="toast" hidden></div>
+</div>
+
+<script>
+/* ================================================================
+   INHALTE ZUM PFLEGEN
+   Termine und Karte hier eintragen. Datum als JJJJ-MM-TT.
+   Solange BEISPIEL true ist, zeigt die App einen Hinweis an.
+   ================================================================ */
+var EVENTS_BEISPIEL = true;
+var EVENTS = [
+  { datum:"2027-03-20", von:"14:00", bis:"18:00", titel:"Saisonstart am Rhein", info:"Erster Kiosktag des Jahres mit Musik", art:"Fest" },
+  { datum:"2027-03-27", von:"16:00", bis:"19:00", titel:"Live-Musik am Ufer", info:"Rock und Pop-Covers", art:"Live" },
+  { datum:"2027-03-28", von:"sunset", bis:"",     titel:"Akustik zum Sonnenuntergang", info:"Gitarre und Gesang", art:"Live" },
+  { datum:"2027-04-04", von:"12:00", bis:"15:00", titel:"Frühschoppen mit Musik", info:"Ostersonntag", art:"Live" }
+];
+
+/* Adresse des Chat-Servers (Cloudflare Worker), z. B. "https://rheinblick-chat.NAME.workers.dev".
+   Leer lassen = Chat über claude.ai. */
+var CHAT_SERVER = "https://rheinblick-chat.andreas-schulze-27.workers.dev";
+
+var KARTE_BEISPIEL = true;
+var KARTE = [
+  { name:"Vesper", artikel:[ ["Wurstsalat mit Brot",""], ["Vesperbrett",""], ["Brezel",""] ] },
+  { name:"Getränke", artikel:[ ["Bier vom Fass",""], ["Radler",""], ["Weinschorle",""], ["Apfelschorle",""], ["Wasser",""] ] },
+  { name:"Kaffee & Eis", artikel:[ ["Kaffee",""], ["Cappuccino",""], ["Eis am Stiel",""] ] }
+];
+
+/* ================================================================ */
+(function(){
+  var LAT=48.198, LNG=7.664, TZ="Europe/Berlin";
+  var $=function(id){return document.getElementById(id)};
+  var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
+  var TAGE=["So","Mo","Di","Mi","Do","Fr","Sa"], MONATE=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+
+  /* ---- Routing ---- */
+  var views=["abend","events","karte","anfahrt","chat"];
+  function route(){
+    var v=(location.hash||"").slice(1); if(views.indexOf(v)<0) v="abend";
+    views.forEach(function(n){$("v-"+n).hidden=(n!==v)});
+    document.querySelectorAll("nav.tabs a").forEach(function(a){ if(a.dataset.v===v) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
+    window.scrollTo(0,0);
+  }
+  window.addEventListener("hashchange",route); route();
+
+  /* ---- Sonnenuntergang (NOAA-Näherung) ---- */
+  function sunsetDate(date){
+    var rad=Math.PI/180, n=Math.floor((date-new Date(date.getFullYear(),0,0))/864e5), g=2*Math.PI/365*(n-1);
+    var eq=229.18*(0.000075+0.001868*Math.cos(g)-0.032077*Math.sin(g)-0.014615*Math.cos(2*g)-0.040849*Math.sin(2*g));
+    var decl=0.006918-0.399912*Math.cos(g)+0.070257*Math.sin(g)-0.006758*Math.cos(2*g)+0.000907*Math.sin(2*g)-0.002697*Math.cos(3*g)+0.00148*Math.sin(3*g);
+    var ha=Math.acos(Math.cos(90.833*rad)/(Math.cos(LAT*rad)*Math.cos(decl))-Math.tan(LAT*rad)*Math.tan(decl))/rad;
+    return new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())+(720-4*(LNG-ha)-eq)*6e4);
+  }
+  function hhmm(d){return d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",timeZone:TZ})}
+  var now=new Date();
+  $("sunTime").textContent=hhmm(sunsetDate(now))+" Uhr";
+
+  /* ---- Öffnungsstatus ---- */
+  function inSeason(d){var m=d.getMonth(),t=d.getDate();return (m>2&&m<10)||(m===2&&t>=15)}
+  var dow=now.getDay(), openH=dow===0?12:13;
+  (dow===0?$("rowSun"):$("rowWeek")).style.color="var(--glow)";
+  var statusWx=null;
+  function setStatus(){
+    var dot=$("stDot"), t=$("stText");
+    if(!inSeason(now)){dot.className="dot off";t.textContent="Winterpause, ab Mitte März wieder offen";return}
+    if(statusWx==="bad"){dot.className="dot off";t.textContent="Heute wohl zu: Regen oder Sturm angesagt";return}
+    if(now.getHours()>=openH){dot.className="dot";t.textContent="Jetzt geöffnet, bei schönem Wetter";return}
+    dot.className="dot warn";t.textContent="Heute ab "+openH+":00 Uhr, bei schönem Wetter";
+  }
+  setStatus();
+
+  /* ---- Wetter-Symbole ---- */
+  var IC={
+    sun:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="#f5c542"/><g stroke="#f5c542" stroke-width="2" stroke-linecap="round"><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></svg>',
+    pc:'<svg viewBox="0 0 24 24"><circle cx="15" cy="9" r="4" fill="#f5c542"/><path d="M7 19h10a4 4 0 0 0 0-8 5 5 0 0 0-9.6 1.5A3.3 3.3 0 0 0 7 19z" fill="#eef2f8"/></svg>',
+    cloud:'<svg viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 0-8 5 5 0 0 0-9.6 1.5A3.3 3.3 0 0 0 7 18z" fill="#dfe6f0"/></svg>',
+    fog:'<svg viewBox="0 0 24 24"><path d="M7 13h10a4 4 0 0 0 0-8 5 5 0 0 0-9.6 1.5A3.3 3.3 0 0 0 7 13z" fill="#dfe6f0"/><path d="M5 16h14M7 19h10" stroke="#dfe6f0" stroke-width="2" stroke-linecap="round"/></svg>',
+    rain:'<svg viewBox="0 0 24 24"><path d="M7 15h10a4 4 0 0 0 0-8 5 5 0 0 0-9.6 1.5A3.3 3.3 0 0 0 7 15z" fill="#eef2f8"/><path d="M9 18l-1 3M13 18l-1 3M17 18l-1 3" stroke="#7cc4ff" stroke-width="2" stroke-linecap="round"/></svg>',
+    snow:'<svg viewBox="0 0 24 24"><path d="M7 15h10a4 4 0 0 0 0-8 5 5 0 0 0-9.6 1.5A3.3 3.3 0 0 0 7 15z" fill="#eef2f8"/><g fill="#eef2f8"><circle cx="9" cy="19" r="1.2"/><circle cx="13" cy="20" r="1.2"/><circle cx="17" cy="19" r="1.2"/></g></svg>',
+    storm:'<svg viewBox="0 0 24 24"><path d="M7 14h10a4 4 0 0 0 0-8 5 5 0 0 0-9.6 1.5A3.3 3.3 0 0 0 7 14z" fill="#c9d2de"/><path d="M12 14l-2 4h3l-2 4" stroke="#f5c542" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    moon:'<svg viewBox="0 0 24 24"><path d="M14 3a7 7 0 1 0 7 9 6 6 0 0 1-7-9z" fill="#eef2f8"/></svg>'
+  };
+  function wmo(c,day){
+    if(c===0) return [day?IC.sun:IC.moon,"Klar"];
+    if(c<=2) return [day?IC.pc:IC.moon,"Teilweise bewölkt"];
+    if(c===3) return [IC.cloud,"Bedeckt"];
+    if(c===45||c===48) return [IC.fog,"Nebel"];
+    if(c>=51&&c<=67) return [IC.rain,c<60?"Nieselregen":"Regen"];
+    if(c>=71&&c<=77) return [IC.snow,"Schnee"];
+    if(c>=80&&c<=82) return [IC.rain,"Regenschauer"];
+    if(c>=85&&c<=86) return [IC.snow,"Schneeschauer"];
+    return [IC.storm,"Gewitter"];
+  }
+
+  /* ---- Wetter rendern ---- */
+  var WX=null;
+  function renderWeather(w,live){
+    WX=w;
+    var c=w.current, d=w.daily, h=w.hourly;
+    $("wTemp").textContent=Math.round(c.temperature_2m)+"°";
+    $("wCond").textContent=wmo(c.weather_code,c.is_day)[1]+" · H: "+Math.round(d.temperature_2m_max[0])+"° T: "+Math.round(d.temperature_2m_min[0])+"°";
+    // Stundenleiste: jetzt + alle 2 Std.
+    var start=0; for(var i=0;i<h.time.length;i++){ if(new Date(h.time[i])>=new Date(now.getTime()-36e5)){start=i;break} }
+    var cells=[]; for(var k=0;k<6;k++){ var j=start+k*2; if(j>=h.time.length)break;
+      var t=new Date(h.time[j]), lab=k===0?"Jetzt":t.getHours()+" Uhr", p=h.precipitation_probability[j];
+      cells.push('<div>'+lab+wmo(h.weather_code[j],h.is_day[j])[0]+'<span class="rain">'+(p>=20?p+" %":"")+'</span><b>'+Math.round(h.temperature_2m[j])+'°</b></div>'); }
+    $("wHours").innerHTML=cells.join("");
+    // Wetterfenster: bester 2-Std.-Block heute bei Tageslicht für einen Spaziergang
+    var best=null;
+    for(var a=start;a<Math.min(h.time.length-1,start+24);a++){
+      var ta=new Date(h.time[a]); if(ta.getDate()!==now.getDate()||!h.is_day[a]||!h.is_day[a+1]) continue;
+      var s=0; for(var b=a;b<=a+1;b++){ var T=h.apparent_temperature[b];
+        s+=100 - h.precipitation_probability[b]*0.8 - Math.max(0,h.wind_speed_10m[b]-15)*1.5 - Math.abs(T-18)*1.8; }
+      s/=2; if(!best||s>best.s) best={s:s,a:ta};
+    }
+    if(best){ $("wfTitle").textContent=best.a.getHours()+"–"+(best.a.getHours()+2)+" Uhr"; $("wfText").textContent="beste Zeit für einen Spaziergang am Rhein"; }
+    else { $("wfTitle").textContent="Morgen wieder"; $("wfText").textContent="heute kein Tageslicht mehr"; }
+    // Schnakenradar: Abendtemperatur, Feuchte, Wind
+    var ev=start; for(var e=start;e<h.time.length;e++){ if(new Date(h.time[e]).getHours()===20){ev=e;break} }
+    var idx=0, Te=h.temperature_2m[ev]; if(Te>10) idx=Math.min(10,(Te-10)/1.5);
+    idx*= (h.relative_humidity_2m[ev]>70?1:0.7); idx*= (h.wind_speed_10m[ev]>15?0.5:1);
+    idx=Math.round(Math.max(0,Math.min(10,idx)));
+    $("snTitle").textContent=idx+" von 10 · "+(idx<=2?"kaum":idx<=4?"gering":idx<=7?"mittel":"hoch");
+    $("snBar").style.width=(idx*10)+"%";
+    $("wSrc").textContent=live?"Live für Weisweil · Wetterdaten: Open-Meteo":"Beispielwerte, weil hier keine Live-Daten geladen werden können · Open-Meteo";
+    // Status: heute Regen oder Sturm?
+    statusWx=(d.precipitation_probability_max[0]>=70||d.wind_gusts_10m_max[0]>=60)?"bad":"ok";
+    setStatus(); renderEvents();
+  }
+
+  function sampleWeather(){
+    var base=new Date(now); base.setMinutes(0,0,0); base.setHours(base.getHours()-1);
+    var h={time:[],temperature_2m:[],apparent_temperature:[],precipitation_probability:[],weather_code:[],is_day:[],wind_speed_10m:[],relative_humidity_2m:[]};
+    for(var i=0;i<48;i++){ var t=new Date(base.getTime()+i*36e5), hr=t.getHours(), day=hr>=7&&hr<18?1:0;
+      var T=8+6*Math.sin((hr-9)/24*2*Math.PI);
+      h.time.push(t.toISOString()); h.temperature_2m.push(T); h.apparent_temperature.push(T-1.5);
+      h.precipitation_probability.push(hr>=20&&hr<=23?40:10); h.weather_code.push(hr>=20&&hr<=23?61:(hr%5===0?3:2));
+      h.is_day.push(day); h.wind_speed_10m.push(10); h.relative_humidity_2m.push(80); }
+    return {current:{temperature_2m:h.temperature_2m[1],weather_code:2,is_day:now.getHours()>=7&&now.getHours()<18?1:0},
+      hourly:h, daily:{time:[],temperature_2m_max:[14],temperature_2m_min:[4],precipitation_probability_max:[30],wind_gusts_10m_max:[30],weather_code:[]}};
+  }
+
+  var url="https://api.open-meteo.com/v1/forecast?latitude="+LAT+"&longitude="+LNG+
+    "&current=temperature_2m,weather_code,is_day"+
+    "&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code,is_day,wind_speed_10m,relative_humidity_2m"+
+    "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_gusts_10m_max"+
+    "&timezone=Europe%2FBerlin&forecast_days=16";
+  var done=false;
+  var timer=setTimeout(function(){ if(!done){done=true;renderWeather(sampleWeather(),false)} },4000);
+  try{
+    fetch(url).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){
+      if(done&&WX&&WX.live) return; clearTimeout(timer); done=true; j.live=true; renderWeather(j,true);
+    }).catch(function(){ if(!done){done=true;clearTimeout(timer);renderWeather(sampleWeather(),false)} });
+  }catch(e){ done=true; clearTimeout(timer); renderWeather(sampleWeather(),false); }
+
+  /* ---- Events ---- */
+  function evDate(e){var p=e.datum.split("-");return new Date(+p[0],p[1]-1,+p[2])}
+  function evTime(e){
+    var d=evDate(e), ss=hhmm(sunsetDate(d));
+    if(e.von==="sunset") return "zum Sonnenuntergang, "+ss+" Uhr";
+    return (e.bis?e.von+" bis "+e.bis:"ab "+e.von)+" Uhr";
+  }
+  function evWeather(e){
+    if(!WX||!WX.live||!WX.daily.time) return "";
+    var i=WX.daily.time.indexOf(e.datum); if(i<0) return "";
+    var p=WX.daily.precipitation_probability_max[i], g=WX.daily.wind_gusts_10m_max[i];
+    return (p<40&&g<50)?'<span class="good">☀ Wetter passt</span>':'<span class="bad">Wetter wackelt, '+p+' % Regen</span>';
+  }
+  function evCard(e,first){
+    var d=evDate(e);
+    return '<div class="ev'+(first?' next':'')+'"><div class="dd"><small>'+TAGE[d.getDay()]+'</small><b>'+d.getDate()+'</b></div><div><h3>'+esc(e.titel)+'</h3><p>'+esc(evTime(e))+(e.info?' · '+esc(e.info):'')+'</p><div class="tags"><span>'+esc(e.art||"Event")+'</span>'+evWeather(e)+'</div></div></div>';
+  }
+  function renderEvents(){
+    var today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    var list=EVENTS.filter(function(e){return evDate(e)>=today}).sort(function(a,b){return evDate(a)-evDate(b)});
+    var note=EVENTS_BEISPIEL?'<p class="ex" style="margin:10px 0 0">Beispieltermine, die echten folgen</p>':'';
+    if(!list.length){ $("eventList").innerHTML='<div class="empty" style="margin-top:16px">Gerade sind keine Termine eingetragen. Neue Termine kommen zuerst in die WhatsApp-Gruppe.</div>'; $("nextEvents").innerHTML='<div class="empty">Keine Termine eingetragen.</div>'; return; }
+    var html="", lastM=-1;
+    list.forEach(function(e,i){ var d=evDate(e), key=d.getFullYear()*12+d.getMonth();
+      if(key!==lastM){ html+='<div class="month">'+MONATE[d.getMonth()]+' '+d.getFullYear()+'</div>'; lastM=key; }
+      html+=evCard(e,i===0); });
+    $("eventList").innerHTML=html+note;
+    $("nextEvents").innerHTML=list.slice(0,2).map(function(e,i){return evCard(e,i===0)}).join("")+note;
+  }
+  renderEvents();
+
+  /* ---- Karte ---- */
+  $("menuNote").textContent=KARTE_BEISPIEL?"Beispielinhalte, die echte Karte mit Preisen folgt":"";
+  $("menu").innerHTML=KARTE.map(function(c){
+    return '<div class="pad menu-cat"><h2>'+esc(c.name)+'</h2>'+c.artikel.map(function(a){
+      return '<div class="row"><span>'+esc(a[0])+'</span><span>'+(a[1]?esc(a[1])+" €":"–,– €")+'</span></div>'}).join("")+'</div>';
+  }).join("");
+
+  /* ---- Kopieren ---- */
+  var toastT;
+  function toast(msg){var t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){t.hidden=true},1800)}
+  document.querySelectorAll("[data-copy]").forEach(function(b){
+    b.addEventListener("click",function(){
+      var v=b.dataset.copy;
+      try{ navigator.clipboard.writeText(v).then(function(){toast("Kopiert")},function(){sel(b)}); }catch(e){ sel(b); }
+    });
+  });
+  /* ---- Chat ---- */
+  function chatMsgEl(m,mine,delFn){
+    var el=document.createElement("div"); el.className="msg"+(mine?" me":"")+(m.team?" team":"");
+    var who=document.createElement("div"); who.className="who";
+    var b=document.createElement("b"); b.textContent=mine?"Du":(m.name||"Gast"); who.appendChild(b);
+    if(m.team){ var bd=document.createElement("span"); bd.className="badge"; bd.textContent="Kiosk"; who.appendChild(bd); }
+    var tm=document.createElement("span"); tm.textContent=new Date(m.at||0).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}); who.appendChild(tm);
+    if(delFn){ var x=document.createElement("button"); x.type="button"; x.className="del"; x.textContent="Löschen"; x.addEventListener("click",delFn); who.appendChild(x); }
+    var t=document.createElement("div"); t.textContent=String(m.text||"");
+    el.appendChild(who); el.appendChild(t); return el;
+  }
+  function chatRender(list,items){
+    list.textContent="";
+    if(!items.length){ var em=document.createElement("div"); em.className="empty"; em.textContent="Noch keine Nachrichten. Schreib die erste!"; list.appendChild(em); return; }
+    var lastDay="";
+    items.forEach(function(it){
+      var day=new Date(it.m.at||0).toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
+      if(day!==lastDay){ var dv=document.createElement("div"); dv.className="day"; dv.textContent=day; list.appendChild(dv); lastDay=day; }
+      list.appendChild(chatMsgEl(it.m,it.mine,it.del));
+    });
+    if(location.hash==="#chat") list.lastChild.scrollIntoView({block:"end"});
+  }
+  var LS={get:function(k){try{return localStorage.getItem(k)||""}catch(e){return ""}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+  (async function(){
+    var state=$("chatState"), list=$("chatList"), form=$("chatForm"), ta=$("chatText"), send=$("chatSend"), nameIn=$("chatName");
+
+    /* Variante 1: eigener Chat-Server (GitHub Pages) */
+    if(CHAT_SERVER){
+      var base=CHAT_SERVER.replace(/\/$/,""), key=LS.get("rheinblick-admin"), myIds=[];
+      try{ myIds=JSON.parse(LS.get("rheinblick-mine")||"[]") }catch(e){}
+      $("nameRow").hidden=false; nameIn.value=LS.get("rheinblick-name");
+      $("adminRow").hidden=false;
+      function hdr(){var h={"Content-Type":"application/json"}; if(key)h["X-Admin-Key"]=key; return h}
+      var lastJson="", isAdmin=false;
+      async function load(){
+        try{
+          var r=await fetch(base+"/messages",{headers:hdr()}); var j=await r.json();
+          isAdmin=!!j.admin; $("adminBtn").textContent=isAdmin?"Als Kiosk-Team angemeldet":"Kiosk-Team? Hier anmelden";
+          state.textContent=isAdmin?"Du schreibst als Kiosk-Team und kannst Nachrichten löschen.":"Die letzten 100 Nachrichten. Alle Besucher der App lesen mit.";
+          var js=JSON.stringify(j.messages)+isAdmin; if(js===lastJson) return; lastJson=js;
+          chatRender(list,j.messages.map(function(m){
+            return {m:m,mine:myIds.indexOf(m.id)>=0&&!m.team,del:isAdmin?function(){
+              fetch(base+"/delete",{method:"POST",headers:hdr(),body:JSON.stringify({id:m.id})}).then(load,function(){toast("Löschen ging nicht")});
+            }:null};
+          }));
+        }catch(e){ state.textContent="Der Chat ist gerade nicht erreichbar."; }
+      }
+      form.hidden=false; load();
+      setInterval(function(){ if(location.hash==="#chat"&&!document.hidden) load(); },8000);
+      window.addEventListener("hashchange",function(){ if(location.hash==="#chat") load(); });
+      form.addEventListener("submit",async function(e){
+        e.preventDefault(); var text=ta.value.trim(); if(!text||send.disabled) return;
+        LS.set("rheinblick-name",nameIn.value.trim());
+        send.disabled=true;
+        try{
+          var r=await fetch(base+"/messages",{method:"POST",headers:hdr(),body:JSON.stringify({name:nameIn.value.trim(),text:text})});
+          var j=await r.json();
+          if(!r.ok){ toast(j.error||"Senden ging nicht"); }
+          else { ta.value=""; lastJson="";
+            var r2=await fetch(base+"/messages",{headers:hdr()}); var j2=await r2.json();
+            var mineNew=j2.messages.filter(function(m){return m.text===text.slice(0,500)}).pop(); if(mineNew){ myIds.push(mineNew.id); myIds=myIds.slice(-50); LS.set("rheinblick-mine",JSON.stringify(myIds)); }
+            load(); }
+        }catch(err){ toast("Senden ging nicht, bitte nochmal"); }
+        send.disabled=false;
+      });
+      $("adminBtn").addEventListener("click",function(){ $("adminForm").hidden=!$("adminForm").hidden; });
+      $("adminForm").addEventListener("submit",function(e){ e.preventDefault(); key=$("adminKey").value.trim(); LS.set("rheinblick-admin",key); $("adminForm").hidden=true; lastJson=""; load(); });
+      ta.addEventListener("keydown",function(e){ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); form.requestSubmit(); } });
+      return;
+    }
+
+    /* Variante 2: geteilte Datenbank des claude.ai-Artifacts */
+    var db=null, user=null, me=null, team=false, canDel=false, docs=[];
+    try{ db=await window.claude.use("db"); user=await window.claude.use("user"); }catch(e){}
+    if(!db){ state.textContent="Der Chat ist noch nicht eingerichtet."; return; }
+    try{ me=user?await user.id():null; team=user?!!(await user.isOwner()):false; canDel=user?!!(await user.canEdit()):false; }catch(e){}
+    var canWrite=null; try{ canWrite=user?await user.can("data.write"):null; }catch(e){}
+    if(canWrite!==false){ form.hidden=false; } else { state.textContent="Du kannst mitlesen. Zum Schreiben braucht dein Zugang Schreibrechte."; }
+    async function render(){
+      var ids=[]; docs.forEach(function(d){var u=d.data().uid; if(u&&ids.indexOf(u)<0)ids.push(u)});
+      var ps={}; try{ if(user&&ids.length) ps=await user.profiles(ids)||{}; }catch(e){}
+      chatRender(list,docs.slice().reverse().map(function(d){
+        var m=d.data(), mine=m.uid===me;
+        return {m:{name:(ps[m.uid]&&ps[m.uid].name)||"Gast",text:m.text,team:m.team,at:m.at},mine:mine,
+          del:(mine||canDel)?function(){ db.collection("chat").doc(d.id).delete().catch(function(){toast("Löschen ging nicht")}); }:null};
+      }));
+    }
+    var timer=setTimeout(function(){ state.textContent="Der Chat ist gerade nicht erreichbar."; },10000);
+    db.collection("chat").orderBy("at","desc").limit(100).onSnapshot(function(snap){
+      if(!snap.metadata.fromCache){ clearTimeout(timer); }
+      if(canWrite!==false) state.textContent="Die letzten 100 Nachrichten. Alle mit Zugang zur App lesen mit.";
+      docs=snap.docs; render();
+    },function(){ clearTimeout(timer); state.textContent="Der Chat konnte nicht geladen werden."; });
+    form.addEventListener("submit",async function(e){
+      e.preventDefault(); var text=ta.value.trim(); if(!text||send.disabled) return;
+      send.disabled=true;
+      try{ await db.collection("chat").add({text:text.slice(0,500),uid:me,team:team,at:Date.now()}); ta.value=""; }
+      catch(err){ if(err&&err.code==="invalid_argument"){ form.hidden=true; state.textContent="Du kannst mitlesen, aber nicht schreiben."; } else toast(err&&err.code==="quota_exceeded"?"Chat ist voll, alte Nachrichten bitte löschen":"Senden ging nicht, bitte nochmal"); }
+      send.disabled=false;
+    });
+    ta.addEventListener("keydown",function(e){ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); form.requestSubmit(); } });
+  })();
+
+  function sel(b){var el=b.parentNode.querySelector("b");var r=document.createRange();r.selectNodeContents(el);var s=getSelection();s.removeAllRanges();s.addRange(r);toast("Markiert, jetzt kopieren")}
+})();
+</script>
+</body></html>
